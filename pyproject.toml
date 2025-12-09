@@ -1,0 +1,10 @@
+[project]
+name = "downloader"
+version = "0.1.0"
+description = "YouTube Video Downloader CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "yt-dlp>=2024.0.0",
+    "python-dotenv>=1.0.0",
+]
