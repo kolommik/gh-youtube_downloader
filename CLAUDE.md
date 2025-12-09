@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 YouTube Video Downloader — CLI-утилита на Python для скачивания видео с YouTube с выбором качества.
 
+**Статус**: ✅ Реализация завершена
+
 ## Tech Stack
 
 - **Python**: 3.11+
@@ -17,15 +19,16 @@ YouTube Video Downloader — CLI-утилита на Python для скачив�
 ## Project Structure
 
 ```
-yt-downloader/
+gh-youtube_downloader/
   pyproject.toml          # uv configuration and dependencies
   .env.example            # Example configuration file
   .env                    # Local configuration (gitignored)
   src/
       downloader/
-          __init__.py
-          main.py         # Main entry point
+          main.py         # Main entry point - standalone CLI script
 ```
+
+**Note**: Упрощенная структура - нет __init__.py и __main__.py, только main.py для простоты.
 
 ## Commands
 
@@ -33,13 +36,20 @@ yt-downloader/
 
 ```bash
 # Интерактивный режим (без параметров)
-uv run python -m downloader
+cd src
+uv run python downloader/main.py
 
 # С параметрами URL и качества
-uv run python -m downloader --url "https://youtube.com/watch?v=..." --quality 720p
+cd src
+uv run python downloader/main.py --url "https://youtube.com/watch?v=..." --quality 720p
 
 # С параметром только URL (качество выбирается интерактивно)
-uv run python -m downloader --url "https://youtube.com/watch?v=..."
+cd src
+uv run python downloader/main.py --url "https://youtube.com/watch?v=..."
+
+# Справка
+cd src
+uv run python downloader/main.py --help
 ```
 
 ### Development Setup
@@ -49,7 +59,8 @@ uv run python -m downloader --url "https://youtube.com/watch?v=..."
 uv sync
 
 # Run the application
-uv run python -m downloader
+cd src
+uv run python downloader/main.py
 ```
 
 ## Core Architecture
@@ -93,9 +104,10 @@ DOWNLOAD_DIR=/path/to/downloads
 ### Error Handling
 
 - Invalid YouTube URL → clear error message
-- Network errors → retry logic or graceful failure
-- Missing `DOWNLOAD_DIR` → use current directory as fallback
+- Network errors → graceful failure with error message
+- Missing `DOWNLOAD_DIR` → use `./downloads` as fallback
 - Invalid quality parameter → fall back to interactive selection
+- KeyboardInterrupt (Ctrl+C) → graceful exit with code 130
 
 ### Progress Display
 

@@ -5,7 +5,11 @@
       "Bash(uv sync:*)",
       "Bash(powershell -Command \"[System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes(''''d:\\9-GitHubR\\gh-youtube_downloader\\CLAUDE.md''''))\")",
       "Bash(Select-String -Pattern \"youtube-dl\" -Context 1,1)",
-      "Bash(uv add:*)"
+      "Bash(uv add:*)",
+      "Bash(uv:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(ruff check:*)"
     ]
   }
 }
