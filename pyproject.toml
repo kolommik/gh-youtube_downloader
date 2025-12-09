@@ -8,3 +8,48 @@ dependencies = [
     "yt-dlp>=2024.0.0",
     "python-dotenv>=1.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.8",
+]
+
+[tool.ruff]
+# Длина строки
+line-length = 100
+
+# Python версия
+target-version = "py311"
+
+# Исключенные директории
+extend-exclude = [
+    ".venv",
+    "__pycache__",
+    "*.pyc",
+]
+
+[tool.ruff.lint]
+# Включенные правила
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RET",    # flake8-return
+]
+
+# Игнорируемые правила
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.format]
+# Форматирование строк
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
