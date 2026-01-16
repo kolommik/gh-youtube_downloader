@@ -26,6 +26,18 @@
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
 
+  // отключение проверки на сертификат
+  "claudeCode.environmentVariables": [
+    {
+      "name": "NODE_TLS_REJECT_UNAUTHORIZED",
+      "value": "0"
+    },
+    {
+      "name": "SSL_CERT_FILE",
+      "value": "nul"
+    }
+  ],
+
   // Исключения для файлов
   "files.exclude": {
     "**/__pycache__": true,
