@@ -2,10 +2,16 @@
 
 import argparse
 import os
+import shutil
 import sys
 
 import yt_dlp
 from dotenv import load_dotenv
+
+
+def is_ffmpeg_available():
+    """Check if ffmpeg is installed and available in PATH."""
+    return shutil.which("ffmpeg") is not None
 
 
 def load_config():
@@ -34,29 +40,43 @@ def get_video_info(url):
         "no_warnings": True,
     }
 
+    has_ffmpeg = is_ffmpeg_available()
+    if not has_ffmpeg:
+        print("\nWarning: ffmpeg not found. Install ffmpeg for better quality.\n")
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
-            # Filter mp4 formats with both video and audio
-            formats = []
+            # Collect available heights
+            heights = set()
             for f in info.get("formats", []):
-                if (
-                    f.get("ext") == "mp4"
-                    and f.get("vcodec") != "none"
-                    and f.get("acodec") != "none"
-                ):
-                    formats.append(
-                        {
-                            "format_id": f["format_id"],
-                            "resolution": f.get("resolution", "unknown"),
-                            "height": f.get("height", 0),
-                            "filesize": f.get("filesize", 0),
-                        }
-                    )
+                if f.get("vcodec") != "none" and f.get("height"):
+                    heights.add(f.get("height"))
 
-            # Sort by height (quality) descending
-            formats.sort(key=lambda x: x["height"], reverse=True)
+            # Create format options
+            formats = []
+            for height in sorted(heights, reverse=True):
+                if has_ffmpeg:
+                    format_id = f"bestvideo[height<={height}]+bestaudio/best[height<={height}]"
+                else:
+                    format_id = f"best[height<={height}]"
+
+                formats.append({
+                    "format_id": format_id,
+                    "resolution": f"{height}p",
+                    "height": height,
+                })
+
+            # Add "best" option at the top
+            if formats:
+                best_height = formats[0]["height"]
+                best_format_id = "bestvideo+bestaudio/best" if has_ffmpeg else "best"
+                formats.insert(0, {
+                    "format_id": best_format_id,
+                    "resolution": f"best ({best_height}p)",
+                    "height": best_height + 1,
+                })
 
             return {"title": info.get("title", "video"), "formats": formats}
     except Exception as e:
@@ -70,26 +90,21 @@ def select_quality(formats, quality_arg=None):
 
     # If quality specified in CLI
     if quality_arg:
-        # Try to match by resolution (e.g., "720p")
         for fmt in formats:
             if quality_arg.lower() in fmt["resolution"].lower():
                 return fmt["format_id"]
-
-        # Try to match by index
         try:
             index = int(quality_arg) - 1
             if 0 <= index < len(formats):
                 return formats[index]["format_id"]
         except ValueError:
             pass
-
         print(f"Quality '{quality_arg}' not found. Available options:")
 
     # Interactive selection
     print("\nAvailable video qualities:")
     for i, fmt in enumerate(formats, 1):
-        size = f"({fmt['filesize'] / (1024**2):.1f} MB)" if fmt["filesize"] else ""
-        print(f"{i}. {fmt['resolution']} {size}")
+        print(f"{i}. {fmt['resolution']}")
 
     while True:
         try:
@@ -116,13 +131,13 @@ def progress_hook(d):
 
 def download_video(url, format_id, download_dir, title):
     """Download video with specified format."""
-    # Ensure download directory exists
     os.makedirs(download_dir, exist_ok=True)
 
     ydl_opts = {
         "format": format_id,
         "outtmpl": os.path.join(download_dir, "%(title)s.%(ext)s"),
         "progress_hooks": [progress_hook],
+        "merge_output_format": "mp4",
     }
 
     try:
@@ -139,14 +154,10 @@ def download_video(url, format_id, download_dir, title):
 def main():
     """Main entry point for the YouTube downloader."""
     try:
-        # 1. Parse arguments
         args = parse_arguments()
-
-        # 2. Load configuration
         config = load_config()
         download_dir = config["download_dir"]
 
-        # 3. Get URL (from args or input)
         url = args.url
         if not url:
             url = input("Enter YouTube video URL: ").strip()
@@ -155,16 +166,12 @@ def main():
             print("Error: URL is required")
             return 1
 
-        # 4. Extract video information
         print("\nFetching video information...")
         video_info = get_video_info(url)
 
         print(f"\nVideo: {video_info['title']}")
 
-        # 5. Select quality
         format_id = select_quality(video_info["formats"], args.quality)
-
-        # 6. Download video
         success = download_video(url, format_id, download_dir, video_info["title"])
 
         return 0 if success else 1
